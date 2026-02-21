@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGI Restaurant Reservation System</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍽️ Nutikas Restorani Reserveerimissüsteem</h1>
+            <p>CGI Suvepraktika 2026</p>
+        </div>
+        
+        <div class="content">
+            <div class="filters">
+                <h3>🔍 Search and filters</h3>
+                
+                <div class="filter-group">
+                    <label>Date and time</label>
+                    <input type="datetime-local" id="dateTime" required>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Number of guests</label>
+                    <input type="number" id="guests" min="1" max="20" value="2" required>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Zone</label>
+                    <select id="zone">
+                        <option value="">All zones</option>
+                        <option value="Main Hall">Main Hall</option>
+                        <option value="VIP Hall">VIP Hall</option>
+                        <option value="Terrace">Terrace</option>
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Preferences</label>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" id="window">
+                            Near window
+                        </label>
+                        <label>
+                            <input type="checkbox" id="private">
+                            Private area
+                        </label>
+                        <label>
+                            <input type="checkbox" id="accessible">
+                            Accessible
+                        </label>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="searchTables()">Search for available tables</button>
+            </div>
+            
+            <div class="restaurant-plan">
+                <h3 class="plan-title">Restaurant hall plan</h3>
+                <div id="tablesContainer"></div>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4CAF50;"></div>
+                        <span>Available</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #f44336;"></div>
+                        <span>Occupied</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #FF9800;"></div>
+                        <span>Recommended</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="bookingModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Book a table</h2>
+            </div>
+            <form id="bookingForm">
+                <div class="form-group">
+                    <label>Table</label>
+                    <input type="text" id="modalTableName" readonly>
+                    <input type="hidden" id="modalTableId">
+                </div>
+                <div class="form-group">
+                    <label>Your name</label>
+                    <input type="text" id="customerName" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="customerEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Number of guests</label>
+                    <input type="number" id="modalGuests" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Time</label>
+                    <input type="text" id="modalTime" readonly>
+                </div>
+                <button type="submit" class="btn">Confirm booking</button>
+                <button type="button" class="btn close-btn" onclick="closeModal()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>
