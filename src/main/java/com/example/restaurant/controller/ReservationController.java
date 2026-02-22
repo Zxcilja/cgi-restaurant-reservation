@@ -7,6 +7,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -17,9 +18,9 @@ public class ReservationController {
     private ReservationService reservationService;
     
     @PostMapping
-    public Reservation createReservation(@RequestBody ReservationRequest request) {
+    public List<Reservation> createReservation(@RequestBody ReservationRequest request) {
         return reservationService.createReservation(
-            request.getTableId(),
+            request.getTableIds(),
             request.getCustomerName(),
             request.getCustomerEmail(),
             request.getNumberOfGuests(),
@@ -33,15 +34,15 @@ public class ReservationController {
     }
     
     public static class ReservationRequest {
-        private Long tableId;
+        private List<Long> tableIds;
         private String customerName;
         private String customerEmail;
         private int numberOfGuests;
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
         private LocalDateTime startTime;
         
-        public Long getTableId() { return tableId; }
-        public void setTableId(Long tableId) { this.tableId = tableId; }
+        public List<Long> getTableIds() { return tableIds; }
+        public void setTableIds(List<Long> tableIds) { this.tableIds = tableIds; }
         
         public String getCustomerName() { return customerName; }
         public void setCustomerName(String customerName) { this.customerName = customerName; }

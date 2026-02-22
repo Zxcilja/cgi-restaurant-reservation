@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -23,35 +25,46 @@ public class ReservationService {
     @Autowired
     private TableService tableService;
     
-    public Reservation createReservation(Long tableId, String customerName, 
-                                        String customerEmail, int numberOfGuests,
-                                        LocalDateTime startTime) {
-        Optional<RestaurantTable> tableOpt = tableRepository.findById(tableId);
-        if (tableOpt.isEmpty()) {
-            throw new RuntimeException("Table not found");
+
+    public List<Reservation> createReservation(List<Long> tableIds, String customerName,
+                                               String customerEmail, int numberOfGuests,
+                                               LocalDateTime startTime) {
+        if (tableIds == null || tableIds.isEmpty()) {
+            throw new RuntimeException("At least one table must be selected");
         }
-        
-        RestaurantTable table = tableOpt.get();
-        
-        if (table.getCapacity() < numberOfGuests) {
-            throw new RuntimeException("Table capacity exceeded");
-        }
-        
+
         LocalDateTime endTime = startTime.plusHours(2);
-        if (!tableService.isTableAvailable(tableId, startTime, endTime)) {
-            throw new RuntimeException("Table is not available at this time");
+        int totalCapacity = 0;
+        for (Long tableId : tableIds) {
+            Optional<RestaurantTable> tableOpt = tableRepository.findById(tableId);
+            if (tableOpt.isEmpty()) {
+                throw new RuntimeException("Table not found: " + tableId);
+            }
+            RestaurantTable table = tableOpt.get();
+            totalCapacity += table.getCapacity();
+            if (!tableService.isTableAvailable(tableId, startTime, endTime)) {
+                throw new RuntimeException("Table " + tableId + " is not available at this time");
+            }
         }
-        
-        Reservation reservation = new Reservation();
-        reservation.setTable(table);
-        reservation.setCustomerName(customerName);
-        reservation.setCustomerEmail(customerEmail);
-        reservation.setNumberOfGuests(numberOfGuests);
-        reservation.setStartTime(startTime);
-        reservation.setEndTime(endTime);
-        reservation.setStatus(ReservationStatus.CONFIRMED);
-        
-        return reservationRepository.save(reservation);
+
+        if (totalCapacity < numberOfGuests) {
+            throw new RuntimeException("Selected tables do not provide enough capacity");
+        }
+
+        List<Reservation> results = new ArrayList<>();
+        for (Long tableId : tableIds) {
+            RestaurantTable table = tableRepository.findById(tableId).get();
+            Reservation reservation = new Reservation();
+            reservation.setTable(table);
+            reservation.setCustomerName(customerName);
+            reservation.setCustomerEmail(customerEmail);
+            reservation.setNumberOfGuests(numberOfGuests);
+            reservation.setStartTime(startTime);
+            reservation.setEndTime(endTime);
+            reservation.setStatus(ReservationStatus.CONFIRMED);
+            results.add(reservationRepository.save(reservation));
+        }
+        return results;
     }
     
     public void cancelReservation(Long reservationId) {

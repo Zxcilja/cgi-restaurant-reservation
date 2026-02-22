@@ -34,26 +34,35 @@ public class TableController {
         
         return tableService.getRecommendations(guests, time, zone, window, privateArea, accessible)
                 .stream()
-                .map(r -> new TableRecommendationDTO(
-                    r.getTable(),
-                    r.getScore(),
-                    tableService.isTableAvailable(r.getTable().getId(), time, time.plusHours(2))
-                ))
+                .map(r -> {
+                    boolean avail = true;
+                    for (RestaurantTable tbl : r.getTables()) {
+                        if (!tableService.isTableAvailable(tbl.getId(), time, time.plusHours(2))) {
+                            avail = false;
+                            break;
+                        }
+                    }
+                    return new TableRecommendationDTO(
+                        r.getTables(),
+                        r.getScore(),
+                        avail
+                    );
+                })
                 .collect(Collectors.toList());
     }
     
     public static class TableRecommendationDTO {
-        private RestaurantTable table;
+        private List<RestaurantTable> tables;
         private double score;
         private boolean available;
         
-        public TableRecommendationDTO(RestaurantTable table, double score, boolean available) {
-            this.table = table;
+        public TableRecommendationDTO(List<RestaurantTable> tables, double score, boolean available) {
+            this.tables = tables;
             this.score = score;
             this.available = available;
         }
         
-        public RestaurantTable getTable() { return table; }
+        public List<RestaurantTable> getTables() { return tables; }
         public double getScore() { return score; }
         public boolean isAvailable() { return available; }
     }

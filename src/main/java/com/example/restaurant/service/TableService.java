@@ -38,10 +38,10 @@ public class TableService {
             boolean preferPrivate,
             boolean preferAccessible) {
         
-        LocalDateTime endTime = startTime.plusHours(2); 
-        
+        LocalDateTime endTime = startTime.plusHours(2);
         List<RestaurantTable> allTables = tableRepository.findAll();
         List<TableRecommendation> recommendations = new ArrayList<>();
+        
         
         for (RestaurantTable table : allTables) {
             if (table.getCapacity() < numberOfGuests) {
@@ -72,11 +72,56 @@ public class TableService {
             double score = calculateScore(table, numberOfGuests, preferredZone, 
                                         preferWindow, preferPrivate, preferAccessible);
             
-            recommendations.add(new TableRecommendation(table, score));
+            recommendations.add(new TableRecommendation(Collections.singletonList(table), score));
         }
         
-        recommendations.sort((a, b) -> Double.compare(b.getScore(), a.getScore()));
+
+        if (!recommendations.isEmpty()) {
+            recommendations.sort((a, b) -> Double.compare(b.getScore(), a.getScore()));
+            return recommendations;
+        }
         
+        
+        for (int i = 0; i < allTables.size(); i++) {
+            RestaurantTable t1 = allTables.get(i);
+            for (int j = i + 1; j < allTables.size(); j++) {
+                RestaurantTable t2 = allTables.get(j);
+                int combinedCapacity = t1.getCapacity() + t2.getCapacity();
+                if (combinedCapacity < numberOfGuests) continue;
+
+                if (!isAdjacent(t1, t2)) continue;
+
+                if (preferredZone != null && !preferredZone.isEmpty()) {
+                    if (!t1.getZone().equalsIgnoreCase(preferredZone) ||
+                        !t2.getZone().equalsIgnoreCase(preferredZone)) {
+                        continue;
+                    }
+                }
+
+                if (preferWindow && !(t1.isNearWindow() || t2.isNearWindow())) {
+                    continue;
+                }
+
+                if (preferPrivate && !(t1.isPrivateArea() || t2.isPrivateArea())) {
+                    continue;
+                }
+
+                if (preferAccessible && !(t1.isAccessible() || t2.isAccessible())) {
+                    continue;
+                }
+
+                if (!isTableAvailable(t1.getId(), startTime, endTime) ||
+                    !isTableAvailable(t2.getId(), startTime, endTime)) {
+                    continue;
+                }
+
+                double score = calculatePairScore(t1, t2, numberOfGuests,
+                        preferredZone, preferWindow, preferPrivate, preferAccessible);
+                recommendations.add(new TableRecommendation(Arrays.asList(t1, t2), score));
+            }
+        }
+
+        recommendations.sort((a, b) -> Double.compare(b.getScore(), a.getScore()));
         return recommendations;
     }
     
@@ -102,16 +147,39 @@ public class TableService {
         return score;
     }
     
+
+    private boolean isAdjacent(RestaurantTable t1, RestaurantTable t2) {
+        double dx = t1.getX() - t2.getX();
+        double dy = t1.getY() - t2.getY();
+        double distance = Math.sqrt(dx * dx + dy * dy);
+        
+        return distance < 2.0; 
+    }
+    
+    private double calculatePairScore(RestaurantTable t1, RestaurantTable t2,
+                                      int guests, String preferredZone,
+                                      boolean preferWindow, boolean preferPrivate,
+                                      boolean preferAccessible) {
+        
+        double score = (calculateScore(t1, guests, preferredZone, preferWindow, preferPrivate, preferAccessible) +
+                        calculateScore(t2, guests, preferredZone, preferWindow, preferPrivate, preferAccessible)) / 2.0;
+        
+        int emptySeats = t1.getCapacity() + t2.getCapacity() - guests;
+        
+        score -= 20;
+        score -= emptySeats * 5;
+        return score;
+    }    
     public static class TableRecommendation {
-        private RestaurantTable table;
+        private List<RestaurantTable> tables;
         private double score;
         
-        public TableRecommendation(RestaurantTable table, double score) {
-            this.table = table;
+        public TableRecommendation(List<RestaurantTable> tables, double score) {
+            this.tables = tables;
             this.score = score;
         }
         
-        public RestaurantTable getTable() { return table; }
+        public List<RestaurantTable> getTables() { return tables; }
         public double getScore() { return score; }
     }
 }
