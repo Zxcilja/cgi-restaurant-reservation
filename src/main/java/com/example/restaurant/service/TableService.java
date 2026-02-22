@@ -37,6 +37,17 @@ public class TableService {
             boolean preferWindow,
             boolean preferPrivate,
             boolean preferAccessible) {
+        return getRecommendations(numberOfGuests, startTime, preferredZone, preferWindow, preferPrivate, preferAccessible, false);
+    }
+
+    public List<TableRecommendation> getRecommendations(
+            int numberOfGuests,
+            LocalDateTime startTime,
+            String preferredZone,
+            boolean preferWindow,
+            boolean preferPrivate,
+            boolean preferAccessible,
+            boolean ignoreAvailability) {
         
         LocalDateTime endTime = startTime.plusHours(2);
         List<RestaurantTable> allTables = tableRepository.findAll();
@@ -65,7 +76,7 @@ public class TableService {
                 continue;
             }
             
-            if (!isTableAvailable(table.getId(), startTime, endTime)) {
+            if (!ignoreAvailability && !isTableAvailable(table.getId(), startTime, endTime)) {
                 continue; 
             }
             
@@ -86,10 +97,8 @@ public class TableService {
             RestaurantTable t1 = allTables.get(i);
             for (int j = i + 1; j < allTables.size(); j++) {
                 RestaurantTable t2 = allTables.get(j);
-                int combinedCapacity = t1.getCapacity() + t2.getCapacity();
-                if (combinedCapacity < numberOfGuests) continue;
 
-                if (!isAdjacent(t1, t2)) continue;
+                if (!isSuitablePair(t1, t2, numberOfGuests)) continue;
 
                 if (preferredZone != null && !preferredZone.isEmpty()) {
                     if (!t1.getZone().equalsIgnoreCase(preferredZone) ||
@@ -110,8 +119,8 @@ public class TableService {
                     continue;
                 }
 
-                if (!isTableAvailable(t1.getId(), startTime, endTime) ||
-                    !isTableAvailable(t2.getId(), startTime, endTime)) {
+                if (!ignoreAvailability && (!isTableAvailable(t1.getId(), startTime, endTime) ||
+                    !isTableAvailable(t2.getId(), startTime, endTime))) {
                     continue;
                 }
 
@@ -123,8 +132,7 @@ public class TableService {
 
         recommendations.sort((a, b) -> Double.compare(b.getScore(), a.getScore()));
         return recommendations;
-    }
-    
+    }    
     private double calculateScore(RestaurantTable table, int guests, String preferredZone,
                                   boolean preferWindow, boolean preferPrivate, boolean preferAccessible) {
         double score = 100.0;
@@ -147,13 +155,25 @@ public class TableService {
         return score;
     }
     
+    
 
-    private boolean isAdjacent(RestaurantTable t1, RestaurantTable t2) {
+    private boolean isSuitablePair(RestaurantTable t1, RestaurantTable t2, int requiredGuests) {
+        
+        if (t1.getCombinableWith().contains(t2.getId()) ||
+            t2.getCombinableWith().contains(t1.getId())) {
+            return (t1.getCapacity() + t2.getCapacity()) >= requiredGuests;
+        }
+
         double dx = t1.getX() - t2.getX();
         double dy = t1.getY() - t2.getY();
         double distance = Math.sqrt(dx * dx + dy * dy);
-        
-        return distance < 2.0; 
+
+        if (distance >= 150.0) {  
+            return false;
+        }
+
+        int combinedCapacity = t1.getCapacity() + t2.getCapacity();
+        return combinedCapacity >= requiredGuests;
     }
     
     private double calculatePairScore(RestaurantTable t1, RestaurantTable t2,

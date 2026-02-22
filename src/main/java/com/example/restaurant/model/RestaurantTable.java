@@ -20,6 +20,12 @@ public class RestaurantTable {
     private boolean accessible;
     private boolean nearKidsArea;
 
+
+    @ElementCollection
+    @CollectionTable(name = "table_combinable", joinColumns = @JoinColumn(name = "table_id"))
+    @Column(name = "other_table_id")
+    private java.util.Set<Long> combinableWith = new java.util.HashSet<>();
+
     public Long getId() {
         return id;
     }
@@ -98,5 +104,13 @@ public class RestaurantTable {
 
     public void setNearKidsArea(boolean nearKidsArea) {
         this.nearKidsArea = nearKidsArea;
+    }
+
+    public java.util.Set<Long> getCombinableWith() {
+        return combinableWith;
+    }
+
+    public void setCombinableWith(java.util.Set<Long> combinableWith) {
+        this.combinableWith = combinableWith;
     }
 }

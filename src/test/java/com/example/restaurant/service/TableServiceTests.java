@@ -111,14 +111,110 @@ class TableServiceTests {
     @Test
     void pairMustBeAdjacent() {
 
-        table2.setX(10);
-        table2.setY(10);
+        table2.setX(400);  
+        table2.setY(400);
         when(tableRepository.findAll()).thenReturn(Arrays.asList(table1, table2));
 
         LocalDateTime time = LocalDateTime.now().plusDays(1);
         List<TableService.TableRecommendation> recs = tableService.getRecommendations(
                 8, time, null, false, false, false);
         assertTrue(recs.isEmpty());
+    }
+
+    @Test
+    void doesNotReturnInsufficientPair() {
+        LocalDateTime time = LocalDateTime.now().plusDays(1);
+        List<TableService.TableRecommendation> recs = tableService.getRecommendations(
+                12, time, null, false, false, false);
+        assertTrue(recs.isEmpty());
+    }
+
+    @Test
+    void doesNotReturnTooDistantPair() {
+        table2.setX(200);
+        table2.setY(0);
+        when(tableRepository.findAll()).thenReturn(Arrays.asList(table1, table2));
+
+        LocalDateTime time = LocalDateTime.now().plusDays(1);
+        List<TableService.TableRecommendation> recs = tableService.getRecommendations(
+                8, time, null, false, false, false);
+        assertTrue(recs.isEmpty());
+    }
+
+    @Test
+    void ignoresDistanceWhenCombinableFlagSet() {
+        table2.setX(200);
+        table2.setY(0);
+        table1.getCombinableWith().add(table2.getId());
+        table2.getCombinableWith().add(table1.getId());
+        when(tableRepository.findAll()).thenReturn(Arrays.asList(table1, table2));
+
+        LocalDateTime time = LocalDateTime.now().plusDays(1);
+        List<TableService.TableRecommendation> recs = tableService.getRecommendations(
+                8, time, null, false, false, false);
+        assertFalse(recs.isEmpty(), "combinable flag should override distance");
+        assertEquals(2, recs.get(0).getTables().size());
+    }
+
+    @Test
+    void recommendsPairWhenLargeTableAlreadyBooked() {
+        RestaurantTable big = new RestaurantTable();
+        big.setId(10L);
+        big.setCapacity(10);
+        big.setX(0);
+        big.setY(0);
+        big.setZone("A");
+
+        RestaurantTable small1 = new RestaurantTable();
+        small1.setId(11L);
+        small1.setCapacity(4);
+        small1.setX(1);
+        small1.setY(0);
+        small1.setZone("A");
+
+        RestaurantTable small2 = new RestaurantTable();
+        small2.setId(12L);
+        small2.setCapacity(6);
+        small2.setX(2);
+        small2.setY(0);
+        small2.setZone("A");
+
+        when(tableRepository.findAll()).thenReturn(Arrays.asList(big, small1, small2));
+
+        LocalDateTime time = LocalDateTime.now().plusDays(1);
+        when(reservationRepository.findOverlappingReservations(eq(big.getId()), any(), any()))
+                .thenReturn(Collections.singletonList(new com.example.restaurant.model.Reservation()));
+        when(reservationRepository.findOverlappingReservations(eq(small1.getId()), any(), any()))
+                .thenReturn(Collections.emptyList());
+        when(reservationRepository.findOverlappingReservations(eq(small2.getId()), any(), any()))
+                .thenReturn(Collections.emptyList());
+
+        List<TableService.TableRecommendation> recs = tableService.getRecommendations(
+                10, time, null, false, false, false);
+
+        assertFalse(recs.isEmpty(), "Expected a recommendation when big table is booked");
+        assertEquals(2, recs.get(0).getTables().size());
+        List<RestaurantTable> pair = recs.get(0).getTables();
+        assertTrue(pair.contains(small1) && pair.contains(small2));
+    }
+
+    @Test
+    void fallbackWhenAllBooked() {
+        
+        when(tableRepository.findAll()).thenReturn(Arrays.asList(table1, table2));
+        when(reservationRepository.findOverlappingReservations(anyLong(), any(), any()))
+                .thenReturn(Collections.singletonList(new com.example.restaurant.model.Reservation()));
+        
+        LocalDateTime time = LocalDateTime.now().plusDays(1);
+        List<TableService.TableRecommendation> recs = tableService.getRecommendations(
+                4, time, null, false, false, false);
+        assertTrue(recs.isEmpty());
+        
+        List<TableService.TableRecommendation> recs2 = tableService.getRecommendations(
+                4, time, null, false, false, false, true);
+        assertFalse(recs2.isEmpty());
+        
+        assertEquals(table1, recs2.get(0).getTables().get(0));
     }
 
     @Test

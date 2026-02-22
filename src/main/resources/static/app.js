@@ -96,7 +96,8 @@ function createTableElement(table, rec) {
 }
 
 async function searchTables() {
-    const guests = document.getElementById('guests').value;
+    const guests = parseInt(document.getElementById('guests').value, 10);
+    const exact = document.getElementById('exact').checked;
     const dateTime = document.getElementById('dateTime').value;
     const zone = document.getElementById('zone').value;
     const window = document.getElementById('window').checked;
@@ -117,6 +118,29 @@ async function searchTables() {
         currentRecommendations = await response.json();
 
         
+        currentRecommendations = currentRecommendations.filter(r => r.available);
+
+        function totalCapacity(rec) {
+            if (rec.tables && rec.tables.length > 0) {
+                return rec.tables.reduce((sum, t) => sum + t.capacity, 0);
+            } else if (rec.table) {
+                return rec.table.capacity;
+            }
+            return 0;
+        }
+
+        if (exact) {
+            currentRecommendations = currentRecommendations.filter(rec => totalCapacity(rec) === guests);
+            if (currentRecommendations.length === 0) {
+                alert('No tables with exactly ' + guests + ' seats found.');
+            }
+        } else {
+            const hasExact = currentRecommendations.some(rec => totalCapacity(rec) === guests);
+            if (hasExact) {
+                currentRecommendations = currentRecommendations.filter(rec => totalCapacity(rec) === guests);
+            }
+        }
+
         const filteredTables = currentRecommendations.flatMap(rec => {
             if (rec.tables && rec.tables.length > 0) {
                 return rec.tables;

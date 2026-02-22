@@ -22,7 +22,6 @@ public class TableController {
     public List<RestaurantTable> getAllTables() {
         return tableService.getAllTables();
     }
-    
     @GetMapping("/recommendations")
     public List<TableRecommendationDTO> getRecommendations(
             @RequestParam int guests,
@@ -32,8 +31,15 @@ public class TableController {
             @RequestParam(required = false, defaultValue = "false") boolean privateArea,
             @RequestParam(required = false, defaultValue = "false") boolean accessible) {
         
-        return tableService.getRecommendations(guests, time, zone, window, privateArea, accessible)
-                .stream()
+        List<TableService.TableRecommendation> recs = tableService.getRecommendations(guests, time, zone, window, privateArea, accessible);
+        boolean usedFallback = false;
+        if (recs.isEmpty()) {
+            recs = tableService.getRecommendations(guests, time, zone, window, privateArea, accessible, true);
+            usedFallback = !recs.isEmpty();
+        }
+
+        final boolean fallback = usedFallback;
+        return recs.stream()
                 .map(r -> {
                     boolean avail = true;
                     for (RestaurantTable tbl : r.getTables()) {
@@ -41,6 +47,9 @@ public class TableController {
                             avail = false;
                             break;
                         }
+                    }
+                    if (fallback) {
+                        avail = false;
                     }
                     return new TableRecommendationDTO(
                         r.getTables(),
@@ -71,6 +80,7 @@ public class TableController {
         private Long id;
         private double x;
         private double y;
+        private java.util.List<Long> combinableWith; 
 
         public TablePositionDTO() {}
         public Long getId() { return id; }
@@ -79,17 +89,23 @@ public class TableController {
         public void setX(double x) { this.x = x; }
         public double getY() { return y; }
         public void setY(double y) { this.y = y; }
+        public java.util.List<Long> getCombinableWith() { return combinableWith; }
+        public void setCombinableWith(java.util.List<Long> combinableWith) { this.combinableWith = combinableWith; }
     }
 
     @PutMapping("/positions")
     public void updatePositions(@RequestBody List<TablePositionDTO> positions) {
         System.out.println("Updating positions: " + positions.size());
         for (TablePositionDTO p : positions) {
-            System.out.println("pos -> id=" + p.getId() + " x=" + p.getX() + " y=" + p.getY());
+            System.out.println("pos -> id=" + p.getId() + " x=" + p.getX() + " y=" + p.getY() + " comb=" + p.getCombinableWith());
             RestaurantTable t = tableService.getTableById(p.getId());
             if (t != null) {
                 t.setX(p.getX());
                 t.setY(p.getY());
+                if (p.getCombinableWith() != null) {
+                    t.getCombinableWith().clear();
+                    t.getCombinableWith().addAll(p.getCombinableWith());
+                }
                 tableService.saveTable(t);
             }
         }

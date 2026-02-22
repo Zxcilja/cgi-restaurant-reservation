@@ -40,14 +40,18 @@ public class DataInitializer implements CommandLineRunner {
         createTable("Table 8 (terrace)", 4, "Terrace", 250, 300, false, false, false, false);
         createTable("Table 9 (kids)", 4, "Main Hall", 500, 150, false, false, false, true);
         createTable("Table 10 (large)", 10, "Main Hall", 350, 250, false, false, true, false);
-        createTable("Table 11 (pair A)", 5, "Main Hall", 100, 400, false, false, false, false);
-        createTable("Table 12 (pair B)", 5, "Main Hall", 101, 400, false, false, false, false);
+        RestaurantTable t11 = createTable("Table 11 (pair A)", 5, "Main Hall", 100, 400, false, false, false, false);
+        RestaurantTable t12 = createTable("Table 12 (pair B)", 5, "Main Hall", 101, 400, false, false, false, false);
+        t11.getCombinableWith().add(t12.getId());
+        t12.getCombinableWith().add(t11.getId());
+        tableRepository.save(t11);
+        tableRepository.save(t12);
 
         createRandomReservations();
     }
 
     
-    private void createTable(String name, int capacity, String zone, double x, double y,
+    private RestaurantTable createTable(String name, int capacity, String zone, double x, double y,
                             boolean nearWindow, boolean privateArea, boolean accessible, boolean nearKids) {
         RestaurantTable table = new RestaurantTable();
         table.setName(name);
@@ -59,7 +63,7 @@ public class DataInitializer implements CommandLineRunner {
         table.setPrivateArea(privateArea);
         table.setAccessible(accessible);
         table.setNearKidsArea(nearKids);
-        tableRepository.save(table);
+        return tableRepository.save(table);
     }
     
     private void createRandomReservations() {
