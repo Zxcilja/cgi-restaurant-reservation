@@ -22,9 +22,14 @@ function displayTables(tables, recommendations) {
     const container = document.getElementById('tablesContainer');
     container.innerHTML = '';
 
+    // сопоставление таблицы -> рекомендация (любая таблица из пары ссылается на общую рекомендацию)
     const recMap = {};
     recommendations.forEach(rec => {
-        recMap[rec.table.id] = rec;
+        if (rec.tables && rec.tables.length > 0) {
+            rec.tables.forEach(t => recMap[t.id] = rec);
+        } else if (rec.table) { // на случай старых объектов
+            recMap[rec.table.id] = rec;
+        }
     });
 
     // Группировка по зонам
@@ -146,7 +151,15 @@ async function searchTables() {
         const response = await fetch(url);
         currentRecommendations = await response.json();
 
-        const filteredTables = currentRecommendations.map(rec => rec.table);
+        
+        const filteredTables = currentRecommendations.flatMap(rec => {
+            if (rec.tables && rec.tables.length > 0) {
+                return rec.tables;
+            } else if (rec.table) {
+                return [rec.table];
+            }
+            return [];
+        });
         displayTables(filteredTables, currentRecommendations);
     } catch (error) {
         console.error('Error searching tables:', error);
@@ -170,7 +183,7 @@ document.getElementById('bookingForm').onsubmit = async function(e) {
     e.preventDefault();
 
     const reservation = {
-        tableId: parseInt(document.getElementById('modalTableId').value),
+        tableIds: [parseInt(document.getElementById('modalTableId').value)],
         customerName: document.getElementById('customerName').value,
         customerEmail: document.getElementById('customerEmail').value,
         numberOfGuests: parseInt(document.getElementById('modalGuests').value),

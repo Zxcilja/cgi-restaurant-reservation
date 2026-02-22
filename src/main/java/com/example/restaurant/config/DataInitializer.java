@@ -35,6 +35,8 @@ public class DataInitializer implements CommandLineRunner {
         createTable("Table 8 (terrace)", 4, "Terrace", 250, 300, false, false, false, false);
         createTable("Table 9 (kids)", 4, "Main Hall", 500, 150, false, false, false, true);
         createTable("Table 10 (large)", 10, "Main Hall", 350, 250, false, false, true, false);
+        createTable("Table 11 (pair A)", 5, "Main Hall", 100, 400, false, false, false, false);
+        createTable("Table 12 (pair B)", 5, "Main Hall", 101, 400, false, false, false, false);
 
         createRandomReservations();
     }
@@ -59,6 +61,7 @@ public class DataInitializer implements CommandLineRunner {
         LocalDateTime tomorrow = LocalDateTime.now().plusDays(1).withHour(19).withMinute(0);
         
         tableRepository.findAll().forEach(table -> {
+            
             if (random.nextDouble() < 0.3) { 
                 Reservation res = new Reservation();
                 res.setTable(table);

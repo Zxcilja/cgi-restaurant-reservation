@@ -80,6 +80,35 @@ class TableServiceTests {
     }
 
     @Test
+    void returnsPairExactFivePlusFive() {
+        
+        RestaurantTable a = new RestaurantTable();
+        a.setId(3L);
+        a.setCapacity(5);
+        a.setX(0);
+        a.setY(1);
+        a.setZone("A");
+
+        RestaurantTable b = new RestaurantTable();
+        b.setId(4L);
+        b.setCapacity(5);
+        b.setX(1);
+        b.setY(1);
+        b.setZone("A");
+
+        when(tableRepository.findAll()).thenReturn(Arrays.asList(a, b));
+
+        LocalDateTime time = LocalDateTime.now().plusDays(1);
+        List<TableService.TableRecommendation> recs = tableService.getRecommendations(
+                10, time, null, false, false, false);
+
+        assertFalse(recs.isEmpty());
+        assertEquals(2, recs.get(0).getTables().size());
+        List<RestaurantTable> pair = recs.get(0).getTables();
+        assertTrue(pair.contains(a) && pair.contains(b));
+    }
+
+    @Test
     void pairMustBeAdjacent() {
 
         table2.setX(10);
