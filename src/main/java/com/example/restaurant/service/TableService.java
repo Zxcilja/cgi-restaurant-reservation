@@ -23,9 +23,13 @@ public class TableService {
         return tableRepository.findAll();
     }
     
+    private static final int AVERAGE_VISIT_HOURS = 3; 
+
+
     public boolean isTableAvailable(Long tableId, LocalDateTime startTime, LocalDateTime endTime) {
+        LocalDateTime bufferStart = startTime.minusHours(AVERAGE_VISIT_HOURS);
         List<Reservation> overlapping = reservationRepository.findOverlappingReservations(
-            tableId, startTime, endTime
+            tableId, bufferStart, endTime
         );
         return overlapping.isEmpty();
     }
@@ -101,8 +105,8 @@ public class TableService {
                 if (!isSuitablePair(t1, t2, numberOfGuests)) continue;
 
                 if (preferredZone != null && !preferredZone.isEmpty()) {
-                    if (!t1.getZone().equalsIgnoreCase(preferredZone) ||
-                        !t2.getZone().equalsIgnoreCase(preferredZone)) {
+                    if (!(t1.getZone().equalsIgnoreCase(preferredZone) ||
+                          t2.getZone().equalsIgnoreCase(preferredZone))) {
                         continue;
                     }
                 }

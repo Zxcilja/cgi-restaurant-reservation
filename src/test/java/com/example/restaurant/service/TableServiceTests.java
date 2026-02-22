@@ -16,6 +16,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import org.mockito.ArgumentCaptor;
 
 class TableServiceTests {
 
@@ -64,6 +65,90 @@ class TableServiceTests {
         assertFalse(recs.isEmpty());
         assertEquals(1, recs.get(0).getTables().size());
         assertEquals(table1, recs.get(0).getTables().get(0));
+    }
+
+    @Test
+    void filtersByZoneForSingle() {
+        RestaurantTable other = new RestaurantTable();
+        other.setId(5L);
+        other.setCapacity(4);
+        other.setX(5);
+        other.setY(5);
+        other.setZone("B");
+        when(tableRepository.findAll()).thenReturn(Arrays.asList(table1, table2, other));
+
+        LocalDateTime time = LocalDateTime.now().plusDays(1);
+        List<TableService.TableRecommendation> recs = tableService.getRecommendations(
+                4, time, "B", false, false, false);
+        assertFalse(recs.isEmpty());
+        assertEquals(1, recs.get(0).getTables().size());
+        assertEquals(other, recs.get(0).getTables().get(0));
+    }
+
+    @Test
+    void filtersByWindowPreference() {
+        table1.setNearWindow(false);
+        table2.setNearWindow(true);
+        when(tableRepository.findAll()).thenReturn(Arrays.asList(table1, table2));
+        LocalDateTime time = LocalDateTime.now().plusDays(1);
+        List<TableService.TableRecommendation> recs = tableService.getRecommendations(
+                4, time, null, true, false, false);
+        assertFalse(recs.isEmpty());
+        assertEquals(table2, recs.get(0).getTables().get(0));
+    }
+
+    @Test
+    void filtersByPrivateAndAccessible() {
+        table1.setPrivateArea(true);
+        table2.setAccessible(true);
+        when(tableRepository.findAll()).thenReturn(Arrays.asList(table1, table2));
+        LocalDateTime time = LocalDateTime.now().plusDays(1);
+        List<TableService.TableRecommendation> recs1 = tableService.getRecommendations(
+                4, time, null, false, true, false);
+        assertFalse(recs1.isEmpty());
+        assertEquals(table1, recs1.get(0).getTables().get(0));
+        List<TableService.TableRecommendation> recs2 = tableService.getRecommendations(
+                4, time, null, false, false, true);
+        assertFalse(recs2.isEmpty());
+        assertEquals(table2, recs2.get(0).getTables().get(0));
+    }
+
+    @Test
+    void zoneFilterForPairAllowsOneMatch() {
+        RestaurantTable a = new RestaurantTable();
+        a.setId(20L);
+        a.setCapacity(6);
+        a.setX(0);
+        a.setY(0);
+        a.setZone("B");
+        RestaurantTable b = new RestaurantTable();
+        b.setId(21L);
+        b.setCapacity(4);
+        b.setX(1);
+        b.setY(0);
+        b.setZone("A");
+
+        when(tableRepository.findAll()).thenReturn(Arrays.asList(a, b));
+        LocalDateTime time = LocalDateTime.now().plusDays(1);
+        List<TableService.TableRecommendation> recs = tableService.getRecommendations(
+                10, time, "B", false, false, false);
+        assertFalse(recs.isEmpty(), "Pair should be allowed when one table is in desired zone");
+        List<RestaurantTable> pair = recs.get(0).getTables();
+        assertTrue(pair.contains(a) && pair.contains(b));
+    }
+
+    @Test
+    void startTimeBufferIsApplied() {
+        LocalDateTime start = LocalDateTime.now().plusDays(1);
+        LocalDateTime end = start.plusHours(2);
+        ArgumentCaptor<LocalDateTime> startCap = ArgumentCaptor.forClass(LocalDateTime.class);
+        ArgumentCaptor<LocalDateTime> endCap = ArgumentCaptor.forClass(LocalDateTime.class);
+        when(reservationRepository.findOverlappingReservations(eq(1L), startCap.capture(), endCap.capture()))
+                .thenReturn(Collections.emptyList());
+
+        tableService.isTableAvailable(1L, start, end);
+        assertEquals(start.minusHours(3), startCap.getValue());
+        assertEquals(end, endCap.getValue());
     }
 
     @Test
