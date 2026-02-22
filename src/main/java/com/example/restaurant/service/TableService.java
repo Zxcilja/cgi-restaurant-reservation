@@ -169,7 +169,16 @@ public class TableService {
         score -= 20;
         score -= emptySeats * 5;
         return score;
-    }    
+    }
+    
+    public RestaurantTable getTableById(Long id) {
+        return tableRepository.findById(id).orElse(null);
+    }
+
+    public RestaurantTable saveTable(RestaurantTable table) {
+        return tableRepository.save(table);
+    }
+
     public static class TableRecommendation {
         private List<RestaurantTable> tables;
         private double score;

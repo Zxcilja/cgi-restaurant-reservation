@@ -127,8 +127,18 @@ body {
     font-size: 1.5em;
 }
 
-/* ЗОНЫ - ключевое изменение */
+
 #tablesContainer {
+
+    position: relative;
+    width: 100%;
+    min-height: 600px;
+    overflow: auto;
+
+}
+
+
+#tablesContainer.fallback-grid {
     display: flex;
     flex-direction: column;
     gap: 30px;
@@ -164,7 +174,7 @@ body {
     align-items: flex-start;
 }
 
-/* Стили столов */
+
 .table {
     border-radius: 16px;
     display: flex;
@@ -233,7 +243,7 @@ body {
     display: inline-block;
 }
 
-/* Легенда */
+
 .legend {
     display: flex;
     gap: 25px;
@@ -258,7 +268,7 @@ body {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-/* Модальное окно */
+
 .modal {
     display: none;
     position: fixed;

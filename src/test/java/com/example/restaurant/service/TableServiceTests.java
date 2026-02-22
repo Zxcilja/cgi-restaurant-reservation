@@ -120,4 +120,21 @@ class TableServiceTests {
                 8, time, null, false, false, false);
         assertTrue(recs.isEmpty());
     }
+
+    @Test
+    void getTableByIdAndSavePosition() {
+        when(tableRepository.findById(1L)).thenReturn(java.util.Optional.of(table1));
+        table1.setX(5.5);
+        table1.setY(7.7);
+        when(tableRepository.save(table1)).thenReturn(table1);
+
+        RestaurantTable found = tableService.getTableById(1L);
+        assertNotNull(found);
+        found.setX(5.5);
+        found.setY(7.7);
+        RestaurantTable saved = tableService.saveTable(found);
+        assertEquals(5.5, saved.getX());
+        assertEquals(7.7, saved.getY());
+        verify(tableRepository).save(table1);
+    }
 }

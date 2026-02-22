@@ -66,4 +66,32 @@ public class TableController {
         public double getScore() { return score; }
         public boolean isAvailable() { return available; }
     }
+    
+    public static class TablePositionDTO {
+        private Long id;
+        private double x;
+        private double y;
+
+        public TablePositionDTO() {}
+        public Long getId() { return id; }
+        public void setId(Long id) { this.id = id; }
+        public double getX() { return x; }
+        public void setX(double x) { this.x = x; }
+        public double getY() { return y; }
+        public void setY(double y) { this.y = y; }
+    }
+
+    @PutMapping("/positions")
+    public void updatePositions(@RequestBody List<TablePositionDTO> positions) {
+        System.out.println("Updating positions: " + positions.size());
+        for (TablePositionDTO p : positions) {
+            System.out.println("pos -> id=" + p.getId() + " x=" + p.getX() + " y=" + p.getY());
+            RestaurantTable t = tableService.getTableById(p.getId());
+            if (t != null) {
+                t.setX(p.getX());
+                t.setY(p.getY());
+                tableService.saveTable(t);
+            }
+        }
+    }
 }

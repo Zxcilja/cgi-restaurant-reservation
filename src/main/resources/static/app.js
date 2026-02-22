@@ -6,6 +6,7 @@ let currentRecommendations = [];
 
 window.onload = function() {
     loadTables();
+    setInterval(loadTables, 10000); // every 10 seconds
 };
 
 async function loadTables() {
@@ -21,62 +22,25 @@ async function loadTables() {
 function displayTables(tables, recommendations) {
     const container = document.getElementById('tablesContainer');
     container.innerHTML = '';
+    container.style.position = 'relative';
 
-    // сопоставление таблицы -> рекомендация (любая таблица из пары ссылается на общую рекомендацию)
     const recMap = {};
     recommendations.forEach(rec => {
         if (rec.tables && rec.tables.length > 0) {
             rec.tables.forEach(t => recMap[t.id] = rec);
-        } else if (rec.table) { // на случай старых объектов
+        } else if (rec.table) { 
             recMap[rec.table.id] = rec;
         }
     });
 
-    // Группировка по зонам
-    const zones = {};
     tables.forEach(table => {
-        if (!zones[table.zone]) {
-            zones[table.zone] = [];
+        const tableDiv = createTableElement(table, recMap[table.id]);
+        if (table.x != null && table.y != null) {
+            tableDiv.style.position = 'absolute';
+            tableDiv.style.left = table.x + 'px';
+            tableDiv.style.top = table.y + 'px';
         }
-        zones[table.zone].push(table);
-    });
-
-    // Сортировка столов внутри зоны
-    Object.keys(zones).forEach(zone => {
-        zones[zone].sort((a, b) => a.name.localeCompare(b.name));
-    });
-
-    // Порядок отображения зон
-    const zoneOrder = ['Main Hall', 'VIP Hall', 'Terrace'];
-    const sortedZones = Object.keys(zones).sort((a, b) => {
-        const indexA = zoneOrder.indexOf(a);
-        const indexB = zoneOrder.indexOf(b);
-        if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-        if (indexA === -1) return 1;
-        if (indexB === -1) return -1;
-        return indexA - indexB;
-    });
-
-    // Отображение по зонам
-    sortedZones.forEach(zoneName => {
-        const zoneSection = document.createElement('div');
-        zoneSection.className = 'zone-section';
-
-        const zoneHeader = document.createElement('div');
-        zoneHeader.className = 'zone-header';
-        zoneHeader.innerHTML = `<h4>${getZoneIcon(zoneName)} ${zoneName}</h4>`;
-        zoneSection.appendChild(zoneHeader);
-
-        const zoneGrid = document.createElement('div');
-        zoneGrid.className = 'zone-grid';
-
-        zones[zoneName].forEach(table => {
-            const tableDiv = createTableElement(table, recMap[table.id]);
-            zoneGrid.appendChild(tableDiv);
-        });
-
-        zoneSection.appendChild(zoneGrid);
-        container.appendChild(zoneSection);
+        container.appendChild(tableDiv);
     });
 }
 
@@ -93,14 +57,14 @@ function createTableElement(table, rec) {
     const tableDiv = document.createElement('div');
     tableDiv.className = 'table';
 
-    // Фиксированные размеры вместо динамических
+
     const baseSize = 140;
     const size = Math.min(180, baseSize + (table.capacity * 8));
     
     tableDiv.style.width = size + 'px';
     tableDiv.style.height = size + 'px';
 
-    // Определение статуса
+
     if (rec) {
         if (rec.score > 80) {
             tableDiv.classList.add('recommended');
@@ -113,16 +77,17 @@ function createTableElement(table, rec) {
         tableDiv.classList.add('available');
     }
 
-    // Контент
+
     tableDiv.innerHTML = `
         <div class="table-info">
             <div class="table-name">${table.name}</div>
             <div class="table-capacity">${table.capacity} kohta</div>
             ${rec ? `<div class="table-score">⭐ ${Math.round(rec.score)}</div>` : ''}
+            <div class="table-coords" style="font-size:10px;opacity:0.7;">(${table.x||0},${table.y||0})</div>
         </div>
     `;
 
-    // Клик только для доступных/рекомендованных
+
     if (!tableDiv.classList.contains('occupied')) {
         tableDiv.onclick = () => openModal(table);
     }

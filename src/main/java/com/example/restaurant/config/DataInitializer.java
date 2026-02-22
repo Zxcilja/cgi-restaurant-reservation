@@ -25,6 +25,11 @@ public class DataInitializer implements CommandLineRunner {
     
     @Override
     public void run(String... args) throws Exception {
+
+        if (tableRepository.count() > 0) {
+            return;
+        }
+
         createTable("Table 1 (window)", 2, "Main Hall", 100, 100, true, false, false, false);
         createTable("Table 2 (window)", 2, "Main Hall", 200, 100, true, false, false, false);
         createTable("Table 3", 4, "Main Hall", 300, 100, false, false, false, false);
@@ -65,7 +70,7 @@ public class DataInitializer implements CommandLineRunner {
             if (random.nextDouble() < 0.3) { 
                 Reservation res = new Reservation();
                 res.setTable(table);
-                res.setCustomerName("Гость " + random.nextInt(100));
+                res.setCustomerName("Guest " + random.nextInt(100));
                 res.setCustomerEmail("guest" + random.nextInt(100) + "@example.com");
                 res.setNumberOfGuests(random.nextInt(table.getCapacity()) + 1);
                 res.setStartTime(tomorrow);
