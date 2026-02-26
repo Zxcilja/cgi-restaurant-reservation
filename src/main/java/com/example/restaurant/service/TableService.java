@@ -14,13 +14,13 @@ import java.util.*;
 public class TableService {
 
     @Autowired
-    private TableRepository tableRepository;
+    private TableRepository tableRepo;
     
     @Autowired
-    private ReservationRepository reservationRepository;
+    private ReservationRepository reservationRepo;
     
     public List<RestaurantTable> getAllTables() {
-        return tableRepository.findAll();
+        return tableRepo.findAll();
     }
     
     private static final int AVERAGE_VISIT_HOURS = 3; 
@@ -28,7 +28,7 @@ public class TableService {
 
     public boolean isTableAvailable(Long tableId, LocalDateTime startTime, LocalDateTime endTime) {
         LocalDateTime bufferStart = startTime.minusHours(AVERAGE_VISIT_HOURS);
-        List<Reservation> overlapping = reservationRepository.findOverlappingReservations(
+        List<Reservation> overlapping = reservationRepo.findOverlappingReservations(
             tableId, bufferStart, endTime
         );
         return overlapping.isEmpty();
@@ -54,7 +54,7 @@ public class TableService {
             boolean ignoreAvailability) {
         
         LocalDateTime endTime = startTime.plusHours(2);
-        List<RestaurantTable> allTables = tableRepository.findAll();
+        List<RestaurantTable> allTables = tableRepo.findAll();
         List<TableRecommendation> recommendations = new ArrayList<>();
         
         
@@ -196,11 +196,11 @@ public class TableService {
     }
     
     public RestaurantTable getTableById(Long id) {
-        return tableRepository.findById(id).orElse(null);
+        return tableRepo.findById(id).orElse(null);
     }
 
     public RestaurantTable saveTable(RestaurantTable table) {
-        return tableRepository.save(table);
+        return tableRepo.save(table);
     }
 
     public static class TableRecommendation {

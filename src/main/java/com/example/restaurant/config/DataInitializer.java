@@ -1,10 +1,7 @@
 package com.example.restaurant.config;
 
-import com.example.restaurant.model.Reservation;
-import com.example.restaurant.model.ReservationStatus;
-import com.example.restaurant.model.RestaurantTable;
-import com.example.restaurant.repository.ReservationRepository;
-import com.example.restaurant.repository.TableRepository;
+import com.example.restaurant.model.*;
+import com.example.restaurant.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
@@ -16,17 +13,17 @@ import java.util.Random;
 public class DataInitializer implements CommandLineRunner {
 
     @Autowired
-    private TableRepository tableRepository;
+    private TableRepository tableRepo;
     
     @Autowired
-    private ReservationRepository reservationRepository;
+    private ReservationRepository reservationRepo;
     
     private Random random = new Random();
     
     @Override
     public void run(String... args) throws Exception {
 
-        if (tableRepository.count() > 0) {
+        if (tableRepo.count() > 0) {
             return;
         }
 
@@ -44,8 +41,8 @@ public class DataInitializer implements CommandLineRunner {
         RestaurantTable t12 = createTable("Table 12 (pair B)", 5, "Main Hall", 101, 400, false, false, false, false);
         t11.getCombinableWith().add(t12.getId());
         t12.getCombinableWith().add(t11.getId());
-        tableRepository.save(t11);
-        tableRepository.save(t12);
+        tableRepo.save(t11);
+        tableRepo.save(t12);
 
         createRandomReservations();
     }
@@ -63,13 +60,13 @@ public class DataInitializer implements CommandLineRunner {
         table.setPrivateArea(privateArea);
         table.setAccessible(accessible);
         table.setNearKidsArea(nearKids);
-        return tableRepository.save(table);
+        return tableRepo.save(table);
     }
     
     private void createRandomReservations() {
         LocalDateTime tomorrow = LocalDateTime.now().plusDays(1).withHour(19).withMinute(0);
         
-        tableRepository.findAll().forEach(table -> {
+        tableRepo.findAll().forEach(table -> {
             
             if (random.nextDouble() < 0.3) { 
                 Reservation res = new Reservation();
@@ -80,7 +77,7 @@ public class DataInitializer implements CommandLineRunner {
                 res.setStartTime(tomorrow);
                 res.setEndTime(tomorrow.plusHours(2));
                 res.setStatus(ReservationStatus.CONFIRMED);
-                reservationRepository.save(res);
+                reservationRepo.save(res);
             }
         });
     }

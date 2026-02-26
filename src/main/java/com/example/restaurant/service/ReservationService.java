@@ -17,10 +17,10 @@ import java.util.Optional;
 public class ReservationService {
 
     @Autowired
-    private ReservationRepository reservationRepository;
+    private ReservationRepository reservationRepo;
     
     @Autowired
-    private TableRepository tableRepository;
+    private TableRepository tableRepo;
     
     @Autowired
     private TableService tableService;
@@ -36,7 +36,7 @@ public class ReservationService {
         LocalDateTime endTime = startTime.plusHours(2);
         int totalCapacity = 0;
         for (Long tableId : tableIds) {
-            Optional<RestaurantTable> tableOpt = tableRepository.findById(tableId);
+            Optional<RestaurantTable> tableOpt = tableRepo.findById(tableId);
             if (tableOpt.isEmpty()) {
                 throw new RuntimeException("Table not found: " + tableId);
             }
@@ -53,7 +53,7 @@ public class ReservationService {
 
         List<Reservation> results = new ArrayList<>();
         for (Long tableId : tableIds) {
-            RestaurantTable table = tableRepository.findById(tableId).get();
+            RestaurantTable table = tableRepo.findById(tableId).get();
             Reservation reservation = new Reservation();
             reservation.setTable(table);
             reservation.setCustomerName(customerName);
@@ -62,17 +62,17 @@ public class ReservationService {
             reservation.setStartTime(startTime);
             reservation.setEndTime(endTime);
             reservation.setStatus(ReservationStatus.CONFIRMED);
-            results.add(reservationRepository.save(reservation));
+            results.add(reservationRepo.save(reservation));
         }
         return results;
     }
     
     public void cancelReservation(Long reservationId) {
-        Optional<Reservation> opt = reservationRepository.findById(reservationId);
+        Optional<Reservation> opt = reservationRepo.findById(reservationId);
         if (opt.isPresent()) {
             Reservation res = opt.get();
             res.setStatus(ReservationStatus.CANCELLED);
-            reservationRepository.save(res);
+            reservationRepo.save(res);
         }
     }
 }
